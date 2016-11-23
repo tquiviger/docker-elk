@@ -1,0 +1,40 @@
+elasticsearch:
+  image: docker.elastic.co/elasticsearch/elasticsearch:latest
+  command: elasticsearch -Enetwork.host=0.0.0.0
+  environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms8g -Xmx8g"
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65536
+      hard: 65536
+  mem_limit: 8g
+  ports:
+    - "9200:9200"
+    - "9300:9300"
+
+logstash:
+  build: logstash/
+  command: logstash -f /etc/logstash/conf.d/logstash.conf
+  volumes:
+    - ./logstash/config:/etc/logstash/conf.d
+    - ~/Work/data/logstash:/data
+  ports:
+    - "5000:5000"
+    - "5044:5044"
+  environment:
+    - LS_HEAP_SIZE=2048m  
+  links:
+    - elasticsearch
+kibana:
+  build: kibana/
+  volumes:
+    - ./kibana/config/:/opt/kibana/config/
+  ports:
+    - "5601:5601"
+  links:
+    - elasticsearch
